@@ -9,7 +9,9 @@
 // $lang['menu'] = 'Your menu entry';
 
 // custom language strings for the plugin
+$lang['expected_number'] = 'Expected number.';
 $lang['unexpected_value'] = 'Unexpected value \'%s\'.';
+$lang['download_failed'] = 'Couldn\'t download fresh version of \'%s\'.';
 
 
 

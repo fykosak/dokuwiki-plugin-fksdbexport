@@ -10,6 +10,8 @@
 if (!defined('DOKU_INC'))
     die();
 
+require_once(__DIR__ . '/inc/soap.php');
+
 class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
 
     const REFRESH_AUTO = 'auto';
@@ -21,7 +23,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
      * @return string Syntax mode type
      */
     public function getType() {
-        return 'substitution';
+        return 'substition';
     }
 
     /**
@@ -35,7 +37,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
      * @return int Sort order - Low numbers go before high numbers
      */
     public function getSort() {
-        return 400; //TODO experiment
+        return 165; //TODO experiment
     }
 
     /**
@@ -44,8 +46,6 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
      * @param string $mode Parser mode
      */
     public function connectTo($mode) {
-        echo __FUNCTION__;
-        die('sdf');
         $this->Lexer->addSpecialPattern('<fksdbexport\b.*?>.+?</fksdbexport>', $mode, 'plugin_fksdbexport');
     }
 
@@ -59,17 +59,15 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
      * @return array Data for the renderer
      */
     public function handle($match, $state, $pos, Doku_Handler &$handler) {
-        echo __FUNCTION__;
         $match = substr($match, 13, -14);              // strip markup (including space after "<fksdbexport ")
         list($parameterString, $templateString) = preg_split('/>/u', $match, 2);
 
         $params = $this->parseParameters($parameterString);
 
-        // (If there are no choices inside the <doodle> tag, then doodle's data will be reset.)
-        $choices = $this->parseChoices($templateString);
+        $result = array($params, $templateString);
 
-        $result = array('params' => $params, 'choices' => $choices);
-        //debout('handle returns', $result);
+        //TODO check filemtime($filename);
+        $this->downloadData($params['qid'], $params['parameters']);
         return $result;
     }
 
@@ -85,6 +83,10 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
         if ($mode != 'xhtml')
             return false;
 
+        list($params, $template) = $data;
+
+        $renderer->doc .= 'A:' . $template . ':A';
+
         return true;
     }
 
@@ -96,7 +98,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
     private function parseParameters($parameterString) {
         //----- default parameter settings
         $params = array(
-            'name' => null,
+            'qid' => null,
             'parameters' => array(),
             'refresh' => self::REFRESH_AUTO,
             'version' => null,
@@ -111,8 +113,8 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
         for ($i = 0; $i < count($regexMatches); $i++) {
             $name = strtolower($regexMatches[$i][1]);  // first subpattern: name of attribute in lowercase
             $value = $regexMatches[$i][2];              // second subpattern is value
-            if (strcmp($name, "name") == 0) {
-                $params['name'] = trim($value);
+            if (strcmp($name, "qid") == 0) {
+                $params['qid'] = trim($value);
             } else if (strcmp(substr($name, 0, 6), "param_") == 0) {
                 $key = substr($name, 6);
                 $params['parameters'][$key] = $value;
@@ -144,6 +146,27 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
             }
         }
         return $params;
+    }
+
+    private function downloadData($qid, $parameters) {
+        global $ID;
+        $soap = new fksdbexport_soap($this->getConf('wsdl'), $this->getConf('user'), $this->getConf('password'));
+        $request = $soap->createRequest($qid, $parameters);
+        $xml = $soap->getResponse($request);
+
+        if (!$xml) {
+            msg('fksdbexport: ' . sprintf($this->getLang('download_failed'), $qid), -1);
+            return false;
+        } else {
+            $dataId = $ID . '.' . $this->getExportId($qid, $parameters);
+            $filename = metaFN($dataId, '.xml');
+            io_saveFile($filename, $xml);
+        }
+    }
+
+    private function getExportId($qid, $parameters) {
+        $hash = md5(serialize($parameters));
+        return $qid . '_' . $hash;
     }
 
 }

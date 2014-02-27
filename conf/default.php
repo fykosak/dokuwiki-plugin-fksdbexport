@@ -5,7 +5,7 @@
  * @author Michal Koutný <michal@fykos.cz>
  */
 
-$conf['url'] = 'http://db.fykos.cz/web-service/default';
+$conf['wsdl'] = 'http://db.fykos.cz/FKSDBWebServices.wsdl';
 //$conf['user'] = null;
 //$conf['password'] = null;
 $conf['expiration'] = 86400;
