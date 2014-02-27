@@ -9,7 +9,7 @@
 // $lang['menu'] = 'Your menu entry';
 
 // custom language strings for the plugin
-// $lang['fixme'] = 'FIXME';
+$lang['unexpected_value'] = 'Unexpected value \'%s\'.';
 
 
 
