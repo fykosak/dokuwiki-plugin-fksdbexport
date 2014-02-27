@@ -1,5 +1,5 @@
 base   fksdbexport
-author Michal Koutný
+author Michal KoutnÃ½
 email  michal@fykos.cz
 date   2014-02-27
 name   fksdbexport plugin

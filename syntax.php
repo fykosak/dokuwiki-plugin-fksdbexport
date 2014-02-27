@@ -3,7 +3,7 @@
  * DokuWiki Plugin fksdbexport (Syntax Component)
  *
  * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
- * @author  Michal Koutný <michal@fykos.cz>
+ * @author  Michal KoutnÃ½ <michal@fykos.cz>
  */
 
 // must be run within Dokuwiki

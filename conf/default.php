@@ -2,7 +2,7 @@
 /**
  * Default settings for the fksdbexport plugin
  *
- * @author Michal Koutný <michal@fykos.cz>
+ * @author Michal KoutnÃ½ <michal@fykos.cz>
  */
 
 //$conf['fixme']    = 'FIXME';
