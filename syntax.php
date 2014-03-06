@@ -122,6 +122,8 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
                 $expiration = $params['expiration'] !== null ? $params['expiration'] : $this->getConf('expiration');
                 if (isset($renderer->meta['date']['valid']['age'])) {
                     $renderer->meta['date']['valid']['age'] = min($renderer->meta['date']['valid']['age'], $expiration);
+                } else {
+                    $renderer->meta['date']['valid']['age'] = $expiration;
                 }
             }
 
