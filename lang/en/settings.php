@@ -6,9 +6,6 @@
  */
 
 // keys need to match the config setting name
-$lang['url'] = 'Web service URL';
-//$lang['user'] = 'User';
-//$lang['password'] = 'Password';
 $lang['expiration'] = 'Cache expiration in seconds';
 
 
