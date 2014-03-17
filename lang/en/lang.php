@@ -12,6 +12,7 @@
 $lang['expected_number'] = 'Expected number.';
 $lang['missing_data'] = 'Missing data.';
 $lang['unexpected_value'] = 'Unexpected value \'%s\'.';
+$lang['missing_parameter'] = 'Missing parameter \'%s\'.';
 
 
 

@@ -10,14 +10,24 @@
 if (!defined('DOKU_INC'))
     die();
 
-require_once(__DIR__ . '/inc/soap.php');
-
 class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
 
     const REFRESH_AUTO = 'auto';
     const REFRESH_MANUAL = 'manual';
     const TEMPLATE_DOKUWIKI = 'dokuwiki';
     const TEMPLATE_XSLT = 'xslt';
+    const SOURCE_EXPORT = 'export';
+    const SOURCE_RESULT_DETAIL = 'results.detail';
+    const SOURCE_RESULT_CUMMULATIVE = 'results.cummulative';
+
+    /**
+     * @var helper_plugin_fksdownloader
+     */
+    private $downloader;
+
+    function __construct() {
+        $this->downloader = $this->loadHelper('fksdownloader');
+    }
 
     /**
      * @return string Syntax mode type
@@ -66,23 +76,18 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
 
         $qid = $params['qid'];
         $queryParameters = $params['parameters'];
-        $filename = $this->getDataFilename($qid, $queryParameters);
-        $exportId = $this->getExportId($qid, $queryParameters);
+        $exportId = helper_plugin_fksdownloader::getExportId($qid, $queryParameters);
 
         if ($params['refresh'] == self::REFRESH_AUTO) {
-            $this->autoRefresh($params, $filename);
+            $source = $this->autoRefresh($params);
         } else if ($params['refresh'] == self::REFRESH_MANUAL) {
-            $this->manualRefresh($params, $filename);
+            $source = $this->manualRefresh($params);
         }
 
-        if (file_exists($filename)) { //download succeeded
-            $content = $this->prepareContent($params, $filename, $templateString);
-        } else {
-            $content = null;
-        }
+        $content = $this->prepareContent($params, $source, $templateString);
 
-        $downloadResult = array($params, $templateString, $filename, $exportId, $content);
-        return $downloadResult;
+        $instructions = array($params, $templateString, $exportId, $content);
+        return $instructions;
     }
 
     /**
@@ -94,12 +99,11 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
      * @return bool If rendering was successful.
      */
     public function render($mode, Doku_Renderer &$renderer, $data) {
-        list($params, $template, $filename, $exportId, $content) = $data;
+        list($params, $template, $exportId, $content) = $data;
 
         if ($mode == 'xhtml') {
             if ($params['refresh'] == self::REFRESH_AUTO) {
-                $this->autoRefresh($params, $filename);
-                $content = file_exists($filename) ? $this->prepareContent($params, $filename, $template) : null;
+                $content = $this->prepareContent($params, $this->autoRefresh($params), $template);
             }
 
             if ($content === null) {
@@ -116,7 +120,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
 
             return true;
         } else if ($mode == 'metadata') {
-            if ($params['refresh'] == self::REFRESH_MANUAL && file_exists($filename)) {
+            if ($params['refresh'] == self::REFRESH_MANUAL && $content !== null) {
                 $renderer->meta[$this->getPluginName()][$exportId]['version'] = $params['version'];
             } else if ($params['refresh'] == self::REFRESH_AUTO) {
                 $expiration = $params['expiration'] !== null ? $params['expiration'] : $this->getConf('expiration');
@@ -125,6 +129,10 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
                 } else {
                     $renderer->meta['date']['valid']['age'] = $expiration;
                 }
+            }
+            if ($params['template_file']) {
+                $templateFile = wikiFN($params['template_file']);
+                $renderer->meta['relation']['fksdbexport'] = array($templateFile);
             }
 
             return true;
@@ -146,6 +154,8 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
             'version' => 0,
             'expiration' => null,
             'template' => self::TEMPLATE_DOKUWIKI,
+            'template_file' => null,
+            'source' => self::SOURCE_EXPORT
         );
 
         //----- parse parameteres into name="value" pairs  
@@ -163,8 +173,8 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
             } else if (strcmp($name, "refresh") == 0) {
                 if ($value == self::REFRESH_AUTO) {
                     $params['refresh'] = self::REFRESH_AUTO;
-                } else if ($value == self::REFRESH_AUTO) {
-                    $params['refresh'] = self::REFRESH_AUTO;
+                } else if ($value == self::REFRESH_MANUAL) {
+                    $params['refresh'] = self::REFRESH_MANUAL;
                 } else {
                     msg(sprintf($this->getLang('unexpected_value'), $value), -1);
                 }
@@ -184,40 +194,40 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
                     msg(sprintf($this->getLang('unexpected_value'), $value), -1);
                 }
             } else {
-                msg(sprintf($this->getLang('unexpected_value'), $name), -1);
+                $found = false;
+                foreach ($params as $paramName => $default) {
+                    if (strcmp($name, $paramName) == 0) {
+                        $params[$name] = trim($value);
+                        $found = true;
+                        break;
+                    }
+                }
+                if (!$found) {
+                    msg(sprintf($this->getLang('unexpected_value'), $name), -1);
+                }
+            }
+        }
+        // check validity
+        if ($params['source'] == self::SOURCE_RESULT_CUMMULATIVE || $params['source'] == self::SOURCE_RESULT_DETAIL) {
+            foreach (array('contest', 'year', 'series') as $paramName) {
+                if (!isset($params['parameters'][$paramName])) {
+                    msg(sprintf($this->getLang('missing_parameter'), $paramName), -1);
+                }
+            }
+            if ($params['source'] == self::SOURCE_RESULT_CUMMULATIVE) {
+                $params['series'] = explode(' ', $params['series']);
             }
         }
         return $params;
     }
 
-    private function downloadData($qid, $parameters) {
-        $soap = new fksdbexport_soap($this->getConf('wsdl'), $this->getConf('user'), $this->getConf('password'));
-        $request = $soap->createRequest($qid, $parameters);
-        $xml = $soap->getResponse($request);
-
-        if (!$xml) {
-            msg('fksdbexport: ' . sprintf($this->getLang('download_failed'), $qid), -1);
-        } else {
-            $filename = $this->getDataFilename($qid, $parameters);
-            io_saveFile($filename, $xml);
+    private function prepareContent($params, $content, $templateString) {
+        if ($content === null) {
+            return null;
         }
-    }
 
-    private function getExportId($qid, $parameters) {
-        $hash = md5(serialize($parameters));
-        return $qid . '_' . $hash;
-    }
-
-    private function getDataFilename($qid, $parameters) {
-        global $ID;
-
-        $dataId = $ID . '.' . $this->getExportId($qid, $parameters);
-        return metaFN($dataId, '.xml');
-    }
-
-    private function prepareContent($params, $filename, $templateString) {
         $xml = new DomDocument;
-        $xml->loadXML(io_readFile($filename));
+        $xml->loadXML($content);
 
         if ($params['template'] == self::TEMPLATE_DOKUWIKI) {
             $xpath = new DOMXPath($xml);
@@ -253,6 +263,11 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
 
             return p_get_instructions($source);
         } else if ($params['template'] == self::TEMPLATE_XSLT) {
+            if ($params['template_file']) {
+                $templateFile = wikiFN($params['template_file']);
+                $templateString = io_readFile($templateFile);
+            }
+
             $xsltproc = new XsltProcessor();
             $xsl = new DomDocument;
             $xsl->loadXML(trim($templateString));
@@ -265,26 +280,45 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
                 }
                 $e = libxml_get_last_error();
                 msg($e->message, -1);
+                $result = null;
             }
             return $result;
         }
     }
 
-    private function autoRefresh($params, $filename) {
+    private function autoRefresh($params) {
         $expiration = $params['expiration'] !== null ? $params['expiration'] : $this->getConf('expiration');
-        if (!file_exists($filename) || filemtime($filename) + $expiration < time()) {
-            $this->downloadData($params['qid'], $params['parameters']);
+        return $this->download($expiration, $params);
+    }
+
+    private function manualRefresh($params) {
+        global $ID;
+        $desiredVersion = $params['version'];
+        $key = $this->getPluginName() . ' ' . helper_plugin_fksdownloader::getExportId($params['qid'], $params['parameters']) . ' version';
+        $downloadedVersion = p_get_metadata($ID, $key);
+
+        if ($downloadedVersion === null || $desiredVersion > $downloadedVersion) {
+            return $this->download(helper_plugin_fksdownloader::EXPIRATION_FRESH, $params);
+        } else {
+            return $this->download(helper_plugin_fksdownloader::EXPIRATION_NEVER, $params);
         }
     }
 
-    private function manualRefresh($params, $filename) {
-        global $ID;
-        $desiredVersion = $params['version'];
-        $key = $this->getPluginName() . ' ' . $this->getExportId($params['qid'], $params['parameters']) . ' version';
-        $downloadedVersion = p_get_metadata($ID, $key);
-
-        if (!file_exists($filename) || $downloadedVersion === null || $desiredVersion > $downloadedVersion) {
-            $this->downloadData($params['qid'], $params['parameters']);
+    private function download($expiration, $params) {
+        $parameters = $params['parameters'];
+        switch ($params['source']) {
+            case self::SOURCE_EXPORT:
+                return $this->downloader->downloadExport($expiration, $params['qid'], $params['parameters']);
+                break;
+            case self::SOURCE_RESULT_DETAIL:
+                return $this->downloader->downloadResultsDetail($expiration, $parameters['contest'], $parameters['year'], $parameters['series']);
+                break;
+            case self::SOURCE_RESULT_CUMMULATIVE:
+                return $this->downloader->downloadResultsCummulative($expiration, $parameters['contest'], $parameters['year'], $parameters['series']);
+                break;
+            default:
+                msg(sprintf($this->getLang('unexpected_value'), $params['source']), -1);
+                break;
         }
     }
 

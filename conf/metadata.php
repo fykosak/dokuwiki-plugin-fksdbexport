@@ -6,8 +6,5 @@
  */
 
 
-$meta['wsdl'] = array('string');
-$meta['user'] = array('string');
-$meta['password'] = array('password');
 $meta['expiration'] = array('numeric');
 
