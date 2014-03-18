@@ -230,7 +230,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
         if ($content === null) {
             return null;
         }
-
+        msg('fksexport: prepareContent');
         $xml = new DomDocument;
         $xml->loadXML($content);
 
@@ -311,6 +311,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
 
     private function download($expiration, $params) {
         $parameters = $params['parameters'];
+        msg('fksexport: attempted download');
         switch ($params['source']) {
             case self::SOURCE_EXPORT:
                 return $this->downloader->downloadExport($expiration, $params['qid'], $params['parameters']);
