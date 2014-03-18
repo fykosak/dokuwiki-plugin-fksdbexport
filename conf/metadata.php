@@ -7,4 +7,6 @@
 
 
 $meta['expiration'] = array('numeric');
+$meta['contest'] = array('multichoice', '_choices' => array('fykos', 'vyfuk'));
+
 

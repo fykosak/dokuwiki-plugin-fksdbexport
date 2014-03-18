@@ -130,8 +130,8 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
                     $renderer->meta['date']['valid']['age'] = $expiration;
                 }
             }
-            if ($params['template_file']) {
-                $templateFile = wikiFN($params['template_file']);
+            if ($params['template_xsl']) {
+                $templateFile = wikiFN($params['template_xsl']);
                 $renderer->meta['relation']['fksdbexport'] = array($templateFile);
             }
 
@@ -149,12 +149,14 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
         //----- default parameter settings
         $params = array(
             'qid' => null,
-            'parameters' => array(),
+            'parameters' => array(
+                'contest' => $this->getConf('contest'),
+            ),
             'refresh' => self::REFRESH_AUTO,
             'version' => 0,
             'expiration' => null,
             'template' => self::TEMPLATE_DOKUWIKI,
-            'template_file' => null,
+            'template_xsl' => null,
             'source' => self::SOURCE_EXPORT
         );
 
@@ -180,6 +182,9 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
                 }
             } else if (strcmp($name, "version") == 0) {
                 $params['version'] = trim($value);
+            } else if (strcmp($name, "template_xsl") == 0) {
+                $params['template_xsl'] = trim($value);
+                $params['template'] = self::TEMPLATE_XSLT; // implies XSL transformation
             } else if (strcmp($name, "expiration") == 0) {
                 if (!is_numeric($value)) {
                     msg($this->getLang('expected_number'), -1);
@@ -263,8 +268,8 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
 
             return p_get_instructions($source);
         } else if ($params['template'] == self::TEMPLATE_XSLT) {
-            if ($params['template_file']) {
-                $templateFile = wikiFN($params['template_file']);
+            if ($params['template_xsl']) {
+                $templateFile = wikiFN($params['template_xsl']);
                 $templateString = io_readFile($templateFile);
             }
 
