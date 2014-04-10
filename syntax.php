@@ -132,7 +132,11 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
             }
             if ($params['template_xsl']) {
                 $templateFile = wikiFN($params['template_xsl']);
-                $renderer->meta['relation']['fksdbexport'] = array($templateFile);
+                if (isset($renderer->meta['relation']['fksdbexport'])) {
+                    $renderer->meta['relation']['fksdbexport'][] = $templateFile;
+                } else {
+                    $renderer->meta['relation']['fksdbexport'] = array($templateFile);
+                }
             }
 
             return true;
@@ -182,6 +186,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
                 }
             } else if (strcmp($name, "version") == 0) {
                 $params['version'] = trim($value);
+                $params['refresh'] = self::REFRESH_MANUAL; // implies manual refresh
             } else if (strcmp($name, "template_xsl") == 0) {
                 $params['template_xsl'] = trim($value);
                 $params['template'] = self::TEMPLATE_XSLT; // implies XSL transformation
@@ -301,7 +306,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
         $desiredVersion = $params['version'];
         $key = $this->getPluginName() . ' ' . helper_plugin_fksdownloader::getExportId($params['qid'], $params['parameters']) . ' version';
         $downloadedVersion = p_get_metadata($ID, $key);
-
+        msg('export: downloaded version ' . $downloadedVersion);
         if ($downloadedVersion === null || $desiredVersion > $downloadedVersion) {
             return $this->download(helper_plugin_fksdownloader::EXPIRATION_FRESH, $params);
         } else {
@@ -311,7 +316,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
 
     private function download($expiration, $params) {
         $parameters = $params['parameters'];
-        msg('fksexport: attempted download');
+        msg('fksexport: attempted download' . $expiration);
         switch ($params['source']) {
             case self::SOURCE_EXPORT:
                 return $this->downloader->downloadExport($expiration, $params['qid'], $params['parameters']);
