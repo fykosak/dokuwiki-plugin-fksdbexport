@@ -278,6 +278,11 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
                 $templateString = io_readFile($templateFile);
             }
 
+            if (!class_exists('XsltProcessor')) {
+                msg($this->getLang('xslt_missing'), -1);
+                return null;
+            }
+            
             $xsltproc = new XsltProcessor();
             $xsl = new DomDocument;
             $xsl->loadXML(trim($templateString));
