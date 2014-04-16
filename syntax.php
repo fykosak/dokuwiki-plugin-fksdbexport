@@ -130,8 +130,8 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
                     $renderer->meta['date']['valid']['age'] = $expiration;
                 }
             }
-            if ($params['template_xsl']) {
-                $templateFile = wikiFN($params['template_xsl']);
+            if ($params['template_file']) {
+                $templateFile = wikiFN($params['template_file']);
                 if (isset($renderer->meta['relation']['fksdbexport'])) {
                     $renderer->meta['relation']['fksdbexport'][] = $templateFile;
                 } else {
@@ -160,7 +160,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
             'version' => 0,
             'expiration' => null,
             'template' => self::TEMPLATE_DOKUWIKI,
-            'template_xsl' => null,
+            'template_file' => null,
             'source' => self::SOURCE_EXPORT
         );
 
@@ -187,8 +187,8 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
             } else if (strcmp($name, "version") == 0) {
                 $params['version'] = trim($value);
                 $params['refresh'] = self::REFRESH_MANUAL; // implies manual refresh
-            } else if (strcmp($name, "template_xsl") == 0) {
-                $params['template_xsl'] = trim($value);
+            } else if (strcmp($name, "template_file") == 0) {
+                $params['template_file'] = trim($value);
                 $params['template'] = self::TEMPLATE_XSLT; // implies XSL transformation
             } else if (strcmp($name, "expiration") == 0) {
                 if (!is_numeric($value)) {
@@ -235,7 +235,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
         if ($content === null) {
             return null;
         }
-        msg('fksexport: prepareContent');
+
         $xml = new DomDocument;
         $xml->loadXML($content);
 
@@ -273,8 +273,8 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
 
             return p_get_instructions($source);
         } else if ($params['template'] == self::TEMPLATE_XSLT) {
-            if ($params['template_xsl']) {
-                $templateFile = wikiFN($params['template_xsl']);
+            if ($params['template_file']) {
+                $templateFile = wikiFN($params['template_file']);
                 $templateString = io_readFile($templateFile);
             }
 
@@ -282,19 +282,22 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
                 msg($this->getLang('xslt_missing'), -1);
                 return null;
             }
-            
+
             $xsltproc = new XsltProcessor();
             $xsl = new DomDocument;
             $xsl->loadXML(trim($templateString));
             //$xsltproc->registerPHPFunctions(); // TODO verify need of this
             $xsltproc->importStyleSheet($xsl);
             $result = $xsltproc->transformToXML($xml);
+
             if ($result === false) {
                 foreach (libxml_get_errors() as $e) {
                     msg($e->message, -1);
                 }
                 $e = libxml_get_last_error();
-                msg($e->message, -1);
+                if ($e) {
+                    msg($e->message, -1);
+                }
                 $result = null;
             }
             return $result;
@@ -309,9 +312,10 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
     private function manualRefresh($params) {
         global $ID;
         $desiredVersion = $params['version'];
-        $key = $this->getPluginName() . ' ' . helper_plugin_fksdownloader::getExportId($params['qid'], $params['parameters']) . ' version';
-        $downloadedVersion = p_get_metadata($ID, $key);
-        msg('export: downloaded version ' . $downloadedVersion);
+        $key = $this->getPluginName() . ' ' . helper_plugin_fksdownloader::getExportId($params['qid'], $params['parameters']);
+        $metadata = p_get_metadata($ID, $key);
+        $downloadedVersion = $metadata['version'];
+
         if ($downloadedVersion === null || $desiredVersion > $downloadedVersion) {
             return $this->download(helper_plugin_fksdownloader::EXPIRATION_FRESH, $params);
         } else {
@@ -321,7 +325,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
 
     private function download($expiration, $params) {
         $parameters = $params['parameters'];
-        msg('fksexport: attempted download' . $expiration);
+
         switch ($params['source']) {
             case self::SOURCE_EXPORT:
                 return $this->downloader->downloadExport($expiration, $params['qid'], $params['parameters']);

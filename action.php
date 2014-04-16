@@ -19,7 +19,7 @@ class action_plugin_fksdbexport extends DokuWiki_Action_Plugin {
      * @return void
      */
     public function register(Doku_Event_Handler $controller) {
-        $controller->register_hook('PARSER_CACHE_USE', 'before', $this, 'handle_parser_cache_use');
+        $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, 'handle_parser_cache_use');
     }
 
     /**
@@ -37,7 +37,7 @@ class action_plugin_fksdbexport extends DokuWiki_Action_Plugin {
         if (!isset($cache->page)) {
             return;
         }
-        if ($cache->mode != 'i') {
+        if ($cache->mode != 'xhtml') {
             return;
         }
 
