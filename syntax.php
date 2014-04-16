@@ -334,7 +334,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
                 return $this->downloader->downloadResultsDetail($expiration, $parameters['contest'], $parameters['year'], $parameters['series']);
                 break;
             case self::SOURCE_RESULT_CUMMULATIVE:
-                return $this->downloader->downloadResultsCummulative($expiration, $parameters['contest'], $parameters['year'], $parameters['series']);
+                return $this->downloader->downloadResultsCummulative($expiration, $parameters['contest'], $parameters['year'], explode(' ', $parameters['series']));
                 break;
             default:
                 msg(sprintf($this->getLang('unexpected_value'), $params['source']), -1);
