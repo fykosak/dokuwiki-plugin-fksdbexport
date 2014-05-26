@@ -30,7 +30,10 @@ table.tablesorter colgroup col.procenta{
 table.tablesorter colgroup col.celkem{
     width: 5em;  
 }
+//table.tablesorter{
+//    border: solid 1px;
+//}
 
-table.tablesorter tbody tr{
-    border-bottom: 1px solid __border__ !important;
+table.tablesorter tbody tr td{
+    border-bottom: solid 1px __border__ !important;
 }
