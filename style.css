@@ -6,7 +6,6 @@ table.tablesorter{
 
 table.tablesorter colgroup col.poradi{
     width: 8em;
-    margin-right: 2em; 
 }
 
 table.tablesorter colgroup col.jmeno{
@@ -35,5 +34,7 @@ table.tablesorter colgroup col.celkem{
 //}
 
 table.tablesorter tbody tr td{
-    border-bottom: solid 1px __border__ !important;
+    border-bottom: solid 1px __background_neu__ !important;
+    border-right: 0px;
+    border-left: 0px;
 }
