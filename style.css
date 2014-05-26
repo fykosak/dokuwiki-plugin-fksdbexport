@@ -1,0 +1,36 @@
+/* CSS Document */
+
+table.tablesorter{
+  width: auto;    
+}
+
+table.tablesorter colgroup col.poradi{
+    width: 8em;
+    margin-right: 2em; 
+}
+
+table.tablesorter colgroup col.jmeno{
+    width: 20em;
+    padding-right: 1em;
+}
+
+table.tablesorter colgroup col.skola{
+    width: 30em;
+    padding-right: 1em;
+}
+
+table.tablesorter colgroup col.body{
+    width: 3em;  
+}
+
+table.tablesorter colgroup col.procenta{
+    width: 4em;  
+}
+
+table.tablesorter colgroup col.celkem{
+    width: 5em;  
+}
+
+table.tablesorter tbody tr{
+    border-bottom: 1px solid __border__ !important;
+}
