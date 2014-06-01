@@ -10,8 +10,7 @@ table.tablesorter colgroup col.poradi{
 
 table.tablesorter colgroup col.jmeno{
     width: 20em;
-    padding-right: 1em;
-    padding-left: 1em;
+    padding-right: 1em !important;
 }
 
 table.tablesorter colgroup col.skola{
