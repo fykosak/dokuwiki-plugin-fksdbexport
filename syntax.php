@@ -17,6 +17,8 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
     const TEMPLATE_DOKUWIKI = 'dokuwiki';
     const TEMPLATE_XSLT = 'xslt';
     const SOURCE_EXPORT = 'export';
+    const SOURCE_EXPORT1 = 'export1';
+    const SOURCE_EXPORT2 = 'export2';
     const SOURCE_RESULT_DETAIL = 'results.detail';
     const SOURCE_RESULT_CUMMULATIVE = 'results.cummulative';
 
@@ -56,7 +58,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
      * @param string $mode Parser mode
      */
     public function connectTo($mode) {
-        $this->Lexer->addSpecialPattern('<fksdbexport\b.*?>.+?</fksdbexport>', $mode, 'plugin_fksdbexport');
+        $this->Lexer->addSpecialPattern('<fksdbexport\b.*?>.*?</fksdbexport>', $mode, 'plugin_fksdbexport');
     }
 
     /**
@@ -161,7 +163,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
             'expiration' => null,
             'template' => self::TEMPLATE_DOKUWIKI,
             'template_file' => null,
-            'source' => self::SOURCE_EXPORT
+            'source' => self::SOURCE_EXPORT1
         );
 
         //----- parse parameteres into name="value" pairs  
@@ -244,9 +246,9 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
             $needles = array();
             //preg_match('#\s*(<header\s*>(.*)</header>)?(.*?)(<footer\s*>(.*)</footer>)?#', $templateString, $matches);
             $m = preg_match('#^\s*(<header>(.*)</header>)?(.+)(<footer>(.*)</footer>)?\s*$#s', $templateString, $matches);
-            $rowTemplate = trim($matches[3]);
-            $header = trim($matches[2]);
-            $footer = trim($matches[5]);
+            $rowTemplate = $matches[3];
+            $header = $matches[2];
+            $footer = $matches[5];
 
             foreach ($xpath->query('//column-definitions/column-definition') as $iter) {
                 $name = $iter->getAttribute('name');
@@ -260,7 +262,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
             foreach ($xpath->query('//data/row') as $row) {
                 $replacements = array();
                 foreach ($row->childNodes as $child) {
-                    if ($child->nodeName == 'col') {
+                    if (isset($child->tagName)) { /* XML content may be interleaved with text nodes */
                         $replacements[] = $child->textContent;
                     }
                 }
@@ -328,7 +330,10 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
 
         switch ($params['source']) {
             case self::SOURCE_EXPORT:
-                return $this->downloader->downloadExport($expiration, $params['qid'], $params['parameters']);
+            case self::SOURCE_EXPORT1:
+            case self::SOURCE_EXPORT2:
+                $version = ($params['source'] === self::SOURCE_EXPORT) ? 1 : (int) substr($params['source'], strlen(self::SOURCE_EXPORT));
+                return $this->downloader->downloadExport($expiration, $params['qid'], $params['parameters'], $version);
                 break;
             case self::SOURCE_RESULT_DETAIL:
                 return $this->downloader->downloadResultsDetail($expiration, $parameters['contest'], $parameters['year'], $parameters['series']);
