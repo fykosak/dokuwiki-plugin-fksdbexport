@@ -246,7 +246,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
             $needles = array();
             //preg_match('#\s*(<header\s*>(.*)</header>)?(.*?)(<footer\s*>(.*)</footer>)?#', $templateString, $matches);
             $m = preg_match('#^\s*(<header>(.*)</header>)?(.+)(<footer>(.*)</footer>)?\s*$#s', $templateString, $matches);
-            $rowTemplate = $matches[3];
+            $rowTemplate = trim($matches[3]);
             $header = $matches[2];
             $footer = $matches[5];
 
