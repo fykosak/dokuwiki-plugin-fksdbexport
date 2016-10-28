@@ -238,11 +238,11 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
     private function prepareContent($params,$content,$templateString) {
         global $ID;
         if($content === null){
-            // return null;
+            return null;
         }
 
         $xml = new DomDocument;
-        //   $xml->loadXML($content);
+        $xml->loadXML($content);
 
         if($params['template'] == self::TEMPLATE_DOKUWIKI){
             $xpath = new DOMXPath($xml);
@@ -308,8 +308,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
             return $result;
         }elseif($params['template'] == self::TEMPLATE_JS){
             /** @TODO just for debuging */
-            $c = io_readFile(metaFN(':fksdownloader:export.2.web.events.sous_cc8d4c2deeb7ff2532320cb554b418cc','.xml'));
-            $xml->loadXML($c);
+            //var_dump($content);
             $xpath = new DOMXPath($xml);
 
 
@@ -323,24 +322,17 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
                 }
                 $json[] = $jsonRow;
             }
-           // var_dump($templateString);
+            // var_dump($templateString);
 
             $e = json_encode($json);
             $cashe = new cache($this->getPluginName()."_".md5($params.$ID),'.js');
             if(!$cashe->useCache()){
-                
-                 $cashe->storeCache($templateString);
+
+                $cashe->storeCache($templateString);
             }
-            
-           
-          //  var_dump($cashe);
-            return '<div data="'.htmlspecialchars($e).'" data-js="'.htmlspecialchars($templateString).'"></div>';
+          
+            return '<div class="fksdbexport js-renderer" data="'.htmlspecialchars($e).'" data-js="'.htmlspecialchars($templateString).'"></div>';
 
-
-
-
-
-            die();
         }
     }
 
@@ -371,7 +363,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
             case self::SOURCE_EXPORT1:
             case self::SOURCE_EXPORT2:
                 $version = ($params['source'] === self::SOURCE_EXPORT) ? 1 : (int) substr($params['source'],strlen(self::SOURCE_EXPORT));
-                return; //$this->downloader->downloadExport($expiration,$params['qid'],$params['parameters'],$version);
+                return $this->downloader->downloadExport($expiration,$params['qid'],$params['parameters'],$version);
                 break;
             case self::SOURCE_RESULT_DETAIL:
                 return $this->downloader->downloadResultsDetail($expiration,$parameters['contest'],$parameters['year'],$parameters['series']);
