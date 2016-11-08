@@ -21,6 +21,7 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
     const SOURCE_EXPORT2 = 'export2';
     const SOURCE_RESULT_DETAIL = 'results.detail';
     const SOURCE_RESULT_CUMMULATIVE = 'results.cummulative';
+    const SOURCE_RESULT_SCHOOL_CUMMULATIVE = 'results.school-cummulative';
 
     /**
      * @var helper_plugin_fksdownloader
@@ -222,13 +223,13 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
             }
         }
         // check validity
-        if($params['source'] == self::SOURCE_RESULT_CUMMULATIVE || $params['source'] == self::SOURCE_RESULT_DETAIL){
+        if(in_array($params['source'], array(self::SOURCE_RESULT_CUMMULATIVE, self::SOURCE_RESULT_DETAIL, self::SOURCE_RESULT_SCHOOL_CUMMULATIVE))){
             foreach (array('contest','year','series') as $paramName) {
                 if(!isset($params['parameters'][$paramName])){
                     msg(sprintf($this->getLang('missing_parameter'),$paramName),-1);
                 }
             }
-            if($params['source'] == self::SOURCE_RESULT_CUMMULATIVE){
+            if($params['source'] == self::SOURCE_RESULT_CUMMULATIVE || $params['source'] == self::SOURCE_RESULT_SCHOOL_CUMMULATIVE){
                 $params['series'] = explode(' ',$params['series']);
             }
         }
@@ -372,6 +373,9 @@ class syntax_plugin_fksdbexport extends DokuWiki_Syntax_Plugin {
                 break;
             case self::SOURCE_RESULT_CUMMULATIVE:
                 return $this->downloader->downloadResultsCummulative($expiration,$parameters['contest'],$parameters['year'],explode(' ',$parameters['series']));
+                break;
+            case self::SOURCE_RESULT_SCHOOL_CUMMULATIVE:
+                return $this->downloader->downloadResultsSchoolCummulative($expiration,$parameters['contest'],$parameters['year'],explode(' ',$parameters['series']));
                 break;
             default:
                 msg(sprintf($this->getLang('unexpected_value'),$params['source']),-1);
