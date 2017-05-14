@@ -1,3 +1,4 @@
+var $ = jQuery;
 $(function () {
     $('.fksdbexport.js-renderer').each(function (e) {
         var data = JSON.parse($(this).attr('data'));
