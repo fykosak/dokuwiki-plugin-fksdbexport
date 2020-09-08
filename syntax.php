@@ -76,9 +76,7 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
 
         $params = $this->parseParameters($parameterString);
 
-        $qid = $params['qid'];
-        $queryParameters = $params['parameters'];
-        $exportId = helper_plugin_fksdownloader::getExportId($qid, $queryParameters);
+        $exportId = helper_plugin_fksdownloader::getExportId($params['qid'], $params['parameters']);
 
         if ($params['refresh'] == self::REFRESH_AUTO) {
             $source = $this->autoRefresh($params);
@@ -148,9 +146,9 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
     /**
      * @note Modified Doodle2 plugin.
      *
-     * @param type $parameterString
+     * @param mixed $parameterString
      */
-    private function parseParameters($parameterString) {
+    private function parseParameters(string $parameterString): array {
         //----- default parameter settings
         $params = [
             'qid' => null,
@@ -234,7 +232,7 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
         return $params;
     }
 
-    private function prepareContent($params, $content, $templateString) {
+    private function prepareContent($params, $content, string $templateString) {
         global $ID;
         if ($content === null) {
             return null;
@@ -326,7 +324,7 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
             // var_dump($templateString);
 
             $e = json_encode($json);
-            $cashe = new cache($this->getPluginName() . "_" . md5($params . $ID), '.js');
+            $cashe = new \dokuwiki\Cache\Cache($this->getPluginName() . "_" . md5($params . $ID), '.js');
             if (!$cashe->useCache()) {
 
                 $cashe->storeCache($templateString);
@@ -337,7 +335,7 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
         }
     }
 
-    private function autoRefresh($params) {
+    private function autoRefresh(array $params) {
         $expiration = $params['expiration'] !== null ? $params['expiration'] : $this->getConf('expiration');
         return $this->download($expiration, $params);
     }
