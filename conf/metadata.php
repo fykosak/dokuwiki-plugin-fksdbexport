@@ -6,7 +6,7 @@
  */
 
 
-$meta['expiration'] = array('numeric');
-$meta['contest'] = array('multichoice', '_choices' => array('fykos', 'vyfuk'));
+$meta['expiration'] = ['numeric'];
+$meta['contest'] = ['multichoice', '_choices' => ['fykos', 'vyfuk']];
 
 
