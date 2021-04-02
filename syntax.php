@@ -10,24 +10,27 @@ use dokuwiki\Extension\SyntaxPlugin;
  */
 class syntax_plugin_fksdbexport extends SyntaxPlugin {
 
-    const REFRESH_AUTO = 'auto';
-    const REFRESH_MANUAL = 'manual';
-    const TEMPLATE_DOKUWIKI = 'dokuwiki';
-    const TEMPLATE_XSLT = 'xslt';
-    const TEMPLATE_JS = 'js';
-    const SOURCE_EXPORT = 'export';
-    const SOURCE_EXPORT1 = 'export1';
-    const SOURCE_EXPORT2 = 'export2';
-    const SOURCE_RESULT_DETAIL = 'results.detail';
-    const SOURCE_RESULT_CUMMULATIVE = 'results.cummulative';
-    const SOURCE_RESULT_SCHOOL_CUMMULATIVE = 'results.school-cummulative';
+    public const REFRESH_AUTO = 'auto';
+    public const REFRESH_MANUAL = 'manual';
 
-    /**
-     * @var helper_plugin_fksdownloader
-     */
-    private $downloader;
+    public const TEMPLATE_DOKUWIKI = 'dokuwiki';
+    public const TEMPLATE_XSLT = 'xslt';
+    public const TEMPLATE_JS = 'js';
 
-    function __construct() {
+    public const SOURCE_EXPORT = 'export';
+    public const SOURCE_EXPORT1 = 'export1';
+    public const SOURCE_EXPORT2 = 'export2';
+
+    public const SOURCE_ORGANIZERS = 'orgs';
+    public const SOURCE_EVENTS_LIST = 'events.list';
+
+    public const SOURCE_RESULT_DETAIL = 'results.detail';
+    public const SOURCE_RESULT_CUMMULATIVE = 'results.cummulative';
+    public const SOURCE_RESULT_SCHOOL_CUMMULATIVE = 'results.school-cummulative';
+
+    private helper_plugin_fksdownloader $downloader;
+
+    public function __construct() {
         $this->downloader = $this->loadHelper('fksdownloader');
     }
 
@@ -232,7 +235,7 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
         return $params;
     }
 
-    private function prepareContent($params, $content, string $templateString) {
+    private function prepareContent(array $params, ?string $content, string $templateString) {
         global $ID;
         if ($content === null) {
             return null;
@@ -282,17 +285,17 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
                 $templateString = io_readFile($templateFile);
             }
 
-            if (!class_exists('XsltProcessor')) {
+            if (!class_exists('XSLTProcessor')) {
                 msg($this->getLang('xslt_missing'), -1);
                 return null;
             }
 
-            $xsltproc = new XsltProcessor();
+            $xsltproc = new XSLTProcessor();
             $xsl = new DomDocument();
             $xsl->loadXML(trim($templateString));
             //$xsltproc->registerPHPFunctions(); // TODO verify need of this
-            $xsltproc->importStyleSheet($xsl);
-            $result = $xsltproc->transformToXML($xml);
+            $xsltproc->importStylesheet($xsl);
+            $result = $xsltproc->transformToXml($xml);
 
             if ($result === false) {
                 foreach (libxml_get_errors() as $e) {
@@ -306,10 +309,7 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
             }
             return $result;
         } elseif ($params['template'] == self::TEMPLATE_JS) {
-            /** @TODO just for debuging */
-            //var_dump($content);
             $xpath = new DOMXPath($xml);
-
 
             $json = [];
 
@@ -321,26 +321,23 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
                 }
                 $json[] = $jsonRow;
             }
-            // var_dump($templateString);
 
             $e = json_encode($json);
             $cashe = new \dokuwiki\Cache\Cache($this->getPluginName() . "_" . md5($params . $ID), '.js');
             if (!$cashe->useCache()) {
-
                 $cashe->storeCache($templateString);
             }
 
             return '<div class="fksdbexport js-renderer" data="' . htmlspecialchars($e) . '" data-js="' . htmlspecialchars($templateString) . '"></div>';
-
         }
     }
 
-    private function autoRefresh(array $params) {
+    private function autoRefresh(array $params): ?string {
         $expiration = $params['expiration'] !== null ? $params['expiration'] : $this->getConf('expiration');
         return $this->download($expiration, $params);
     }
 
-    private function manualRefresh($params) {
+    private function manualRefresh(array $params): ?string {
         global $ID;
         $desiredVersion = $params['version'];
         $key = $this->getPluginName() . ' ' . helper_plugin_fksdownloader::getExportId($params['qid'], $params['parameters']);
@@ -354,7 +351,7 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
         }
     }
 
-    private function download($expiration, $params) {
+    private function download(int $expiration, array $params): ?string {
         $parameters = $params['parameters'];
 
         switch ($params['source']) {
@@ -368,10 +365,15 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
             case self::SOURCE_RESULT_CUMMULATIVE:
                 return $this->downloader->downloadResultsCummulative($expiration, $parameters['contest'], $parameters['year'], explode(' ', $parameters['series']));
             case self::SOURCE_RESULT_SCHOOL_CUMMULATIVE:
-                return $this->downloader->downloadResultsSchoolCummulative($expiration, $parameters['contest'], $parameters['year'], explode(' ', $parameters['series']));
+                msg('fksdownloader: ' . 'School results is deprecated', -1);
+                return null;
+            case self::SOURCE_ORGANIZERS:
+                return $this->downloader->downloadOrganisers($expiration, $parameters['contest'] == 'fykos' ? 1 : 2, $parameters['year'] ?? null);
+            case self::SOURCE_EVENTS_LIST:
+                return $this->downloader->downloadEventsList($expiration, explode(',', $parameters['event_type_ids']));
             default:
                 msg(sprintf($this->getLang('unexpected_value'), $params['source']), -1);
-                break;
+                return null;
         }
     }
 }
