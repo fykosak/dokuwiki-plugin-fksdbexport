@@ -52,7 +52,7 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
      * @return int Sort order - Low numbers go before high numbers
      */
     public function getSort(): int {
-        return 165; //just copied Doodle or whatever
+        return 165;
     }
 
     /**
@@ -146,11 +146,6 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
         return false;
     }
 
-    /**
-     * @note Modified Doodle2 plugin.
-     *
-     * @param mixed $parameterString
-     */
     private function parseParameters(string $parameterString): array {
         //----- default parameter settings
         $params = [
@@ -235,6 +230,12 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
         return $params;
     }
 
+    /**
+     * @param array $params
+     * @param string|null $content
+     * @param string $templateString
+     * @return array|false|string|null
+     */
     private function prepareContent(array $params, ?string $content, string $templateString) {
         global $ID;
         if ($content === null) {
