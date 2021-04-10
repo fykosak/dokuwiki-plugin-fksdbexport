@@ -23,6 +23,7 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
 
     public const SOURCE_ORGANIZERS = 'orgs';
     public const SOURCE_EVENTS_LIST = 'events.list';
+    public const SOURCE_EVENT_PARTICIPANTS = 'event.participants';
 
     public const SOURCE_RESULT_DETAIL = 'results.detail';
     public const SOURCE_RESULT_CUMMULATIVE = 'results.cummulative';
@@ -372,6 +373,12 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
                 return $this->downloader->downloadOrganisers($expiration, $parameters['contest'] == 'fykos' ? 1 : 2, $parameters['year'] ?? null);
             case self::SOURCE_EVENTS_LIST:
                 return $this->downloader->downloadEventsList($expiration, explode(',', $parameters['event_type_ids']));
+            case self::SOURCE_EVENT_PARTICIPANTS:
+                return $this->downloader->downloadEventParticipants(
+                    $expiration,
+                    $parameters['event_id'],
+                    $parameters['status'] ? explode(',', $parameters['status']) : []
+                );
             default:
                 msg(sprintf($this->getLang('unexpected_value'), $params['source']), -1);
                 return null;
