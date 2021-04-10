@@ -80,8 +80,6 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
 
         $params = $this->parseParameters($parameterString);
 
-        $exportId = helper_plugin_fksdownloader::getExportId($params['qid'], $params['parameters']);
-
         if ($params['refresh'] == self::REFRESH_AUTO) {
             $source = $this->autoRefresh($params);
         } elseif ($params['refresh'] == self::REFRESH_MANUAL) {
@@ -90,7 +88,7 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
 
         $content = $this->prepareContent($params, $source, $templateString);
 
-        return [$params, $templateString, $exportId, $content];
+        return [$params, $templateString, serialize($params), $content];
     }
 
     /**
@@ -342,7 +340,7 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
     private function manualRefresh(array $params): ?string {
         global $ID;
         $desiredVersion = $params['version'];
-        $key = $this->getPluginName() . ' ' . helper_plugin_fksdownloader::getExportId($params['qid'], $params['parameters']);
+        $key = $this->getPluginName() . ' ' . serialize($params);
         $metadata = p_get_metadata($ID, $key);
         $downloadedVersion = $metadata['version'];
 
