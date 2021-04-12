@@ -1,0 +1,14 @@
+{
+    "name": "fykosak/dokuwiki-plugin-fksdb-export",
+    "description": "",
+    "type": "library",
+    "authors": [
+        {
+            "name": "FYKOS",
+            "email": "webmaster@fykos.cz"
+        }
+    ],
+    "require": {
+        "fykosak/fksdb-downloader-core": "1.1.1"
+    }
+}

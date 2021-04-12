@@ -1,0 +1,57 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "0e558c64fbf91918e9fb410e7e7f73a0",
+    "packages": [
+        {
+            "name": "fykosak/fksdb-downloader-core",
+            "version": "1.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/fykosak/fksdb-downloader-core.git",
+                "reference": "9fd486b6bf36f9350a619189feff2452c9d43fc4"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/fykosak/fksdb-downloader-core/zipball/9fd486b6bf36f9350a619189feff2452c9d43fc4",
+                "reference": "9fd486b6bf36f9350a619189feff2452c9d43fc4",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "ext-soap": "*",
+                "php": "7.4.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Fykosak\\FKSDBDownloaderCore\\": "src/",
+                    "Fykosak\\FKSDBDownloaderCore\\Tools\\": "tools/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "fykos.cz",
+                    "email": "webmaster@fykos.cz"
+                }
+            ],
+            "description": "Interface for downloading data from FKSDB by SOAP-client",
+            "time": "2021-04-12T11:01:55+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": []
+}
