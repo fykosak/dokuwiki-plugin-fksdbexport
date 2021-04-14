@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "0e558c64fbf91918e9fb410e7e7f73a0",
+    "content-hash": "ae0d2421d94c1820e0f1c3279d6b3d72",
     "packages": [
         {
             "name": "fykosak/fksdb-downloader-core",
@@ -52,6 +52,8 @@
     "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
-    "platform": [],
+    "platform": {
+        "php": "7.4.*"
+    },
     "platform-dev": []
 }

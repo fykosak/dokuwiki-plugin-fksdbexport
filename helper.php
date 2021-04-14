@@ -23,18 +23,24 @@ class helper_plugin_fksdbexport extends Plugin {
 
     private FKSDBDownloader $downloader;
 
+    /**
+     * @return FKSDBDownloader
+     * @throws SoapFault
+     */
     private function getSoap(): FKSDBDownloader {
         if (!isset($this->downloader)) {
-            try {
-                $this->downloader = new FKSDBDownloader($this->getConf('wsdl'), $this->getConf('fksdb_login'), $this->getConf('fksdb_password'));
-            } catch (SoapFault $e) {
-                msg('fksdbexport: ' . $e->getMessage(), -1);
-            }
+            $this->downloader = new FKSDBDownloader($this->getConf('wsdl'), $this->getConf('fksdb_login'), $this->getConf('fksdb_password'));
         }
         return $this->downloader;
     }
 
-    public function downloadFKSDB(Request $request, int $expiration): string {
+    /**
+     * @param Request $request
+     * @param int $expiration
+     * @return string
+     * @throws SoapFault
+     */
+    public function download(Request $request, int $expiration): string {
         $cached = $this->getFromCache($request->getCacheKey(), $expiration);
 
         if (!$cached) {

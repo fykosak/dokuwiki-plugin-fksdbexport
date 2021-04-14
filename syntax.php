@@ -1,6 +1,7 @@
 <?php
 
 use dokuwiki\Extension\SyntaxPlugin;
+use Fykosak\FKSDBDownloaderCore\Requests\Event\EventDetailRequest;
 use Fykosak\FKSDBDownloaderCore\Requests\Event\ParticipantListRequest;
 use Fykosak\FKSDBDownloaderCore\Requests\EventListRequest;
 use Fykosak\FKSDBDownloaderCore\Requests\ExportRequest;
@@ -22,14 +23,15 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
 
     public const TEMPLATE_DOKUWIKI = 'dokuwiki';
     public const TEMPLATE_XSLT = 'xslt';
-    public const TEMPLATE_JS = 'js';
 
     public const SOURCE_EXPORT = 'export';
     public const SOURCE_EXPORT1 = 'export1';
     public const SOURCE_EXPORT2 = 'export2';
 
     public const SOURCE_ORGANIZERS = 'orgs';
-    public const SOURCE_EVENTS_LIST = 'events.list';
+    public const SOURCE_EVENT_LIST = 'event.list';
+
+    public const SOURCE_EVENT_DETAIL = 'event.detail';
     public const SOURCE_EVENT_PARTICIPANTS = 'event.participants';
 
     public const SOURCE_RESULT_DETAIL = 'results.detail';
@@ -96,7 +98,7 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
 
         $content = $this->prepareContent($params, $source, $templateString);
 
-        return [$params, $templateString, $request->getCacheKey(), $content];
+        return [$params, $templateString, $content];
     }
 
     /**
@@ -108,11 +110,10 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
      * @return bool If rendering was successful.
      */
     public function render($mode, Doku_Renderer $renderer, $data): bool {
-        [$params, $template, $exportId, $content] = $data;
-
+        [$params, $template, $content] = $data;
+        $request = $this->createRequest($params);
         if ($mode == 'xhtml') {
             if ($params['refresh'] == self::REFRESH_AUTO) {
-                $request = $this->createRequest($params);
                 $content = $this->prepareContent($params, $this->autoRefresh($params, $request), $template);
             }
 
@@ -124,14 +125,14 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
 
             if ($params['template'] == self::TEMPLATE_DOKUWIKI) {
                 $renderer->doc .= p_render($mode, $content, $info);
-            } elseif ($params['template'] == self::TEMPLATE_XSLT || $params['template'] == self::TEMPLATE_JS) {
+            } elseif ($params['template'] == self::TEMPLATE_XSLT) {
                 $renderer->doc .= $content;
             }
 
             return true;
         } elseif ($mode == 'metadata') {
             if ($params['refresh'] == self::REFRESH_MANUAL && $content !== null) {
-                $renderer->meta[$this->getPluginName()][$exportId]['version'] = $params['version'];
+                $renderer->meta[$this->getPluginName()][$request->getCacheKey()]['version'] = $params['version'];
             } elseif ($params['refresh'] == self::REFRESH_AUTO) {
                 $expiration = $params['expiration'] !== null ? $params['expiration'] : $this->getConf('expiration');
                 if (isset($renderer->meta['date']['valid']['age'])) {
@@ -176,12 +177,12 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
         for ($i = 0; $i < count($regexMatches); $i++) {
             $name = strtolower($regexMatches[$i][1]);  // first subpattern: name of attribute in lowercase
             $value = $regexMatches[$i][2];              // second subpattern is value
-            if (strcmp($name, "qid") == 0) {
+            if (strcmp($name, 'qid') == 0) {
                 $params['qid'] = trim($value);
-            } elseif (strcmp(substr($name, 0, 6), "param_") == 0) {
+            } elseif (strcmp(substr($name, 0, 6), 'param_') == 0) {
                 $key = substr($name, 6);
                 $params['parameters'][$key] = $value;
-            } elseif (strcmp($name, "refresh") == 0) {
+            } elseif (strcmp($name, 'refresh') == 0) {
                 if ($value == self::REFRESH_AUTO) {
                     $params['refresh'] = self::REFRESH_AUTO;
                 } elseif ($value == self::REFRESH_MANUAL) {
@@ -189,24 +190,22 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
                 } else {
                     msg(sprintf($this->getLang('unexpected_value'), $value), -1);
                 }
-            } elseif (strcmp($name, "version") == 0) {
+            } elseif (strcmp($name, 'version') == 0) {
                 $params['version'] = trim($value);
                 $params['refresh'] = self::REFRESH_MANUAL; // implies manual refresh
-            } elseif (strcmp($name, "template_file") == 0) {
+            } elseif (strcmp($name, 'template_file') == 0) {
                 $params['template_file'] = trim($value);
                 $params['template'] = self::TEMPLATE_XSLT; // implies XSL transformation
-            } elseif (strcmp($name, "expiration") == 0) {
+            } elseif (strcmp($name, 'expiration') == 0) {
                 if (!is_numeric($value)) {
                     msg($this->getLang('expected_number'), -1);
                 }
                 $params['expiration'] = trim($value);
-            } elseif (strcmp($name, "template") == 0) {
+            } elseif (strcmp($name, 'template') == 0) {
                 if ($value == self::TEMPLATE_DOKUWIKI) {
                     $params['template'] = self::TEMPLATE_DOKUWIKI;
                 } elseif ($value == self::TEMPLATE_XSLT) {
                     $params['template'] = self::TEMPLATE_XSLT;
-                } elseif ($value == self::TEMPLATE_JS) {
-                    $params['template'] = self::TEMPLATE_JS;
                 } else {
                     msg(sprintf($this->getLang('unexpected_value'), $value), -1);
                 }
@@ -242,10 +241,9 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
      * @param array $params
      * @param string|null $content
      * @param string $templateString
-     * @return array|false|string|null
+     * @return array|string|null
      */
     private function prepareContent(array $params, ?string $content, string $templateString) {
-        global $ID;
         if ($content === null) {
             return null;
         }
@@ -256,9 +254,7 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
         if ($params['template'] == self::TEMPLATE_DOKUWIKI) {
             $xpath = new DOMXPath($xml);
             $needles = [];
-            //preg_match('#\s*(<header\s*>(.*)</header>)?(.*?)(<footer\s*>(.*)</footer>)?#', $templateString, $matches);
-
-            $m = preg_match('#^\s*(<header>(.*)</header>)?(.+)(<footer>(.*)</footer>)?\s*$#s', $templateString, $matches);
+            preg_match('#^\s*(<header>(.*)</header>)?(.+)(<footer>(.*)</footer>)?\s*$#s', $templateString, $matches);
             $rowTemplate = trim($matches[3]);
 
             $header = $matches[2];
@@ -317,36 +313,15 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
                 $result = null;
             }
             return $result;
-        } elseif ($params['template'] == self::TEMPLATE_JS) {
-            $xpath = new DOMXPath($xml);
-
-            $json = [];
-
-            foreach ($xpath->query('//data/row') as $row) {
-                $jsonRow = [];
-
-                foreach ($row->childNodes as $child) {
-                    $jsonRow[$child->tagName] = $child->textContent;
-                }
-                $json[] = $jsonRow;
-            }
-
-            $e = json_encode($json);
-            $cashe = new \dokuwiki\Cache\Cache($this->getPluginName() . '_' . md5($params . $ID), '.js');
-            if (!$cashe->useCache()) {
-                $cashe->storeCache($templateString);
-            }
-
-            return '<div class="fksdbexport js-renderer" data="' . htmlspecialchars($e) . '" data-js="' . htmlspecialchars($templateString) . '"></div>';
         }
     }
 
-    private function autoRefresh(array $params, Request $request): ?string {
+    private function autoRefresh(array $params, Request $request): string {
         $expiration = $params['expiration'] !== null ? $params['expiration'] : $this->getConf('expiration');
-        return $this->downloader->downloadFKSDB($request, $expiration);
+        return $this->downloader->download($request, $expiration);
     }
 
-    private function manualRefresh(array $params, Request $request): ?string {
+    private function manualRefresh(array $params, Request $request): string {
         global $ID;
         $desiredVersion = $params['version'];
         $key = $this->getPluginName() . ' ' . serialize($params);
@@ -354,9 +329,9 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
         $downloadedVersion = $metadata['version'];
 
         if ($downloadedVersion === null || $desiredVersion > $downloadedVersion) {
-            return $this->downloader->downloadFKSDB($request, helper_plugin_fksdbexport::EXPIRATION_FRESH);
+            return $this->downloader->download($request, helper_plugin_fksdbexport::EXPIRATION_FRESH);
         } else {
-            return $this->downloader->downloadFKSDB($request, helper_plugin_fksdbexport::EXPIRATION_NEVER);
+            return $this->downloader->download($request, helper_plugin_fksdbexport::EXPIRATION_NEVER);
         }
     }
 
@@ -367,20 +342,22 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
             case self::SOURCE_EXPORT1:
             case self::SOURCE_EXPORT2:
                 $version = ($params['source'] === self::SOURCE_EXPORT) ? 1 : (int)substr($params['source'], strlen(self::SOURCE_EXPORT));
-                return new ExportRequest($params['qid'], $params['parameters'], $version);
+                return new ExportRequest((string)$params['qid'], (array)$params['parameters'], (int)$version);
             case self::SOURCE_RESULT_DETAIL:
-                return new ResultsDetailRequest($parameters['contest'], $parameters['year'], $parameters['series']);
+                return new ResultsDetailRequest((string)$parameters['contest'], (int)$parameters['year'], (int)$parameters['series']);
             case self::SOURCE_RESULT_CUMMULATIVE:
-                return new ResultsCumulativeRequest($parameters['contest'], $parameters['year'], explode(' ', $parameters['series']));
+                return new ResultsCumulativeRequest((string)$parameters['contest'], (int)$parameters['year'], explode(' ', $parameters['series']));
             case self::SOURCE_RESULT_SCHOOL_CUMMULATIVE:
                 msg('fksdownloader: ' . 'School results is deprecated', -1);
                 return null;
             case self::SOURCE_ORGANIZERS:
                 return new OrganizersRequest($parameters['contest'] == 'fykos' ? 1 : 2, $parameters['year'] ?? null);
-            case self::SOURCE_EVENTS_LIST:
+            case self::SOURCE_EVENT_LIST:
                 return new EventListRequest(explode(',', $parameters['event_type_ids']));
             case self::SOURCE_EVENT_PARTICIPANTS:
-                return (new ParticipantListRequest($parameters['event_id'], $parameters['status'] ? explode(',', $parameters['status']) : []));
+                return new ParticipantListRequest((int)$parameters['event_id'], $parameters['status'] ? explode(',', $parameters['status']) : []);
+            case self::SOURCE_EVENT_DETAIL:
+                return new EventDetailRequest((int)$parameters['event_id']);
             default:
                 msg(sprintf($this->getLang('unexpected_value'), $params['source']), -1);
                 return null;
