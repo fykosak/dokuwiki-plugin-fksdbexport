@@ -34,17 +34,17 @@ class helper_plugin_fksdbexport extends Plugin {
         return $this->downloader;
     }
 
-    /**
-     * @param Request $request
-     * @param int $expiration
-     * @return string
-     * @throws SoapFault
-     */
-    public function download(Request $request, int $expiration): string {
+    public function download(Request $request, int $expiration): ?string {
         $cached = $this->getFromCache($request->getCacheKey(), $expiration);
 
         if (!$cached) {
-            $content = $this->getSoap()->download($request);
+            try {
+                $content = $this->getSoap()->download($request);
+            } catch (Throwable$exception) {
+                msg($exception->getMessage());
+                return null;
+            }
+
             if ($content) {
                 $this->putToCache($request->getCacheKey(), $content);
             }

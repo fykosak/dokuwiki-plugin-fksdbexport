@@ -316,12 +316,12 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
         }
     }
 
-    private function autoRefresh(array $params, Request $request): string {
+    private function autoRefresh(array $params, Request $request): ?string {
         $expiration = $params['expiration'] !== null ? $params['expiration'] : $this->getConf('expiration');
         return $this->downloader->download($request, $expiration);
     }
 
-    private function manualRefresh(array $params, Request $request): string {
+    private function manualRefresh(array $params, Request $request): ?string {
         global $ID;
         $desiredVersion = $params['version'];
         $key = $this->getPluginName() . ' ' . serialize($params);

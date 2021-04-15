@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "ae0d2421d94c1820e0f1c3279d6b3d72",
+    "content-hash": "c58d649ae811b8ee702ecc936a42d5d7",
     "packages": [
         {
             "name": "fykosak/fksdb-downloader-core",
-            "version": "1.1.1",
+            "version": "1.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/fykosak/fksdb-downloader-core.git",
-                "reference": "9fd486b6bf36f9350a619189feff2452c9d43fc4"
+                "reference": "50de450ac83d7cc2d4bc973fd33361d2ad1f3efe"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/fykosak/fksdb-downloader-core/zipball/9fd486b6bf36f9350a619189feff2452c9d43fc4",
-                "reference": "9fd486b6bf36f9350a619189feff2452c9d43fc4",
+                "url": "https://api.github.com/repos/fykosak/fksdb-downloader-core/zipball/50de450ac83d7cc2d4bc973fd33361d2ad1f3efe",
+                "reference": "50de450ac83d7cc2d4bc973fd33361d2ad1f3efe",
                 "shasum": ""
             },
             "require": {
@@ -43,7 +43,7 @@
                 }
             ],
             "description": "Interface for downloading data from FKSDB by SOAP-client",
-            "time": "2021-04-12T11:01:55+00:00"
+            "time": "2021-04-15T00:05:03+00:00"
         }
     ],
     "packages-dev": [],
