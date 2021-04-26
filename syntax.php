@@ -1,9 +1,8 @@
 <?php
 
 use dokuwiki\Extension\SyntaxPlugin;
-use Fykosak\FKSDBDownloaderCore\Requests\Event\EventDetailRequest;
-use Fykosak\FKSDBDownloaderCore\Requests\Event\ParticipantListRequest;
 use Fykosak\FKSDBDownloaderCore\Requests\EventListRequest;
+use Fykosak\FKSDBDownloaderCore\Requests\EventRequest;
 use Fykosak\FKSDBDownloaderCore\Requests\ExportRequest;
 use Fykosak\FKSDBDownloaderCore\Requests\OrganizersRequest;
 use Fykosak\FKSDBDownloaderCore\Requests\Request;
@@ -259,31 +258,58 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
 
             $header = $matches[2];
             $footer = $matches[5];
-
-            foreach ($xpath->query('//column-definitions/column-definition') as $iter) {
-                $name = $iter->getAttribute('name');
-                $needles[] = '@' . $name . '@';
-            }
-            $needles[] = '@iterator0@';
-            $needles[] = '@iterator@';
-
-            $source = $header . "\n";
-            $iterator = 0;
-            foreach ($xpath->query('//data/row') as $row) {
-                $replacements = [];
-                foreach ($row->childNodes as $child) {
-                    if (isset($child->tagName)) { /* XML content may be interleaved with text nodes */
-                        $replacements[] = $child->textContent;
-                    }
+            if (in_array($params['source'], [self::SOURCE_EXPORT, self::SOURCE_EXPORT1, self::SOURCE_EXPORT2])) {
+                foreach ($xpath->query('//column-definitions/column-definition') as $iter) {
+                    $name = $iter->getAttribute('name');
+                    $needles[] = '@' . $name . '@';
                 }
-                $replacements[] = $iterator++;
-                $replacements[] = $iterator;
+                $needles[] = '@iterator0@';
+                $needles[] = '@iterator@';
 
-                $source .= str_replace($needles, $replacements, $rowTemplate) . "\n";
+                $source = $header . "\n";
+                $iterator = 0;
+                foreach ($xpath->query('//data/row') as $row) {
+                    $replacements = [];
+                    foreach ($row->childNodes as $child) {
+                        if (isset($child->tagName)) { /* XML content may be interleaved with text nodes */
+                            $replacements[] = $child->textContent;
+                        }
+                    }
+                    $replacements[] = $iterator++;
+                    $replacements[] = $iterator;
+
+                    $source .= str_replace($needles, $replacements, $rowTemplate) . "\n";
+                }
+                $source .= $footer . "\n";
+
+                return p_get_instructions($source);
+            } else {
+                $source = $header . "\n";
+                $iterator = 0;
+                /** @var DOMElement $row */
+                foreach ($xpath->query('SOAP-ENV:Body')->item(0)->firstChild->childNodes as $row) {
+                    if (!isset($row->tagName)) { /* XML content may be interleaved with text nodes */
+                        continue;
+                    }
+                    $replacements = [];
+                    $needles = [];
+                    /** @var DOMElement $child */
+                    foreach ($row->childNodes as $child) {
+                        if (isset($child->tagName)) { /* XML content may be interleaved with text nodes */
+                            $needles[] = '@' . $child->tagName . '@';
+                            $replacements[] = $child->textContent;
+                        }
+                    }
+                    $needles[] = '@iterator0@';
+                    $needles[] = '@iterator@';
+                    $replacements[] = $iterator++;
+                    $replacements[] = $iterator;
+                    $source .= str_replace($needles, $replacements, $rowTemplate) . "\n";
+                }
+                $source .= $footer . "\n";
+
+                return p_get_instructions($source);
             }
-            $source .= $footer . "\n";
-
-            return p_get_instructions($source);
         } elseif ($params['template'] == self::TEMPLATE_XSLT) {
             if ($params['template_file']) {
                 $templateFile = wikiFN($params['template_file']);
@@ -355,9 +381,9 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
             case self::SOURCE_EVENT_LIST:
                 return new EventListRequest(explode(',', $parameters['event_type_ids']));
             case self::SOURCE_EVENT_PARTICIPANTS:
-                return new ParticipantListRequest((int)$parameters['event_id'], $parameters['status'] ? explode(',', $parameters['status']) : []);
+                msg('fksdownloader: ' . 'Use eventDetail type', -1);
             case self::SOURCE_EVENT_DETAIL:
-                return new EventDetailRequest((int)$parameters['event_id']);
+                return new EventRequest((int)$parameters['event_id']);
             default:
                 msg(sprintf($this->getLang('unexpected_value'), $params['source']), -1);
                 return null;
