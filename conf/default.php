@@ -4,6 +4,4 @@
  *
  * @author Michal Koutný <michal@fykos.cz>
  */
-
 $conf['expiration'] = 86400;
-

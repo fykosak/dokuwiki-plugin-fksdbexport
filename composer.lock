@@ -1,0 +1,59 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "a9dc4e1e4d2679f764fef314cfbf1f1e",
+    "packages": [
+        {
+            "name": "fykosak/fksdb-downloader-core",
+            "version": "1.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/fykosak/fksdb-downloader-core.git",
+                "reference": "c10cdcef1c5fd3e0284b96e33235642c3da170e2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/fykosak/fksdb-downloader-core/zipball/c10cdcef1c5fd3e0284b96e33235642c3da170e2",
+                "reference": "c10cdcef1c5fd3e0284b96e33235642c3da170e2",
+                "shasum": ""
+            },
+            "require": {
+                "ext-dom": "*",
+                "ext-soap": "*",
+                "php": "7.4.*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Fykosak\\FKSDBDownloaderCore\\": "src/",
+                    "Fykosak\\FKSDBDownloaderCore\\Tools\\": "tools/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "fykos.cz",
+                    "email": "webmaster@fykos.cz"
+                }
+            ],
+            "description": "Interface for downloading data from FKSDB by SOAP-client",
+            "time": "2021-04-26T18:30:53+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": "7.4.*"
+    },
+    "platform-dev": []
+}
