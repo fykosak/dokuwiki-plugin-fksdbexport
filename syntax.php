@@ -15,7 +15,8 @@ use Fykosak\FKSDBDownloaderCore\Requests\Results\ResultsDetailRequest;
  * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
  * @author  Michal Koutný <michal@fykos.cz>
  */
-class syntax_plugin_fksdbexport extends SyntaxPlugin {
+class syntax_plugin_fksdbexport extends SyntaxPlugin
+{
 
     public const REFRESH_AUTO = 'auto';
     public const REFRESH_MANUAL = 'manual';
@@ -39,28 +40,32 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
 
     private helper_plugin_fksdbexport $downloader;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->downloader = $this->loadHelper('fksdbexport');
     }
 
     /**
      * @return string Syntax mode type
      */
-    public function getType(): string {
+    public function getType(): string
+    {
         return 'substition';
     }
 
     /**
      * @return string Paragraph type
      */
-    public function getPType(): string {
+    public function getPType(): string
+    {
         return 'block';
     }
 
     /**
      * @return int Sort order - Low numbers go before high numbers
      */
-    public function getSort(): int {
+    public function getSort(): int
+    {
         return 165;
     }
 
@@ -69,7 +74,8 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
      *
      * @param string $mode Parser mode
      */
-    public function connectTo($mode): void {
+    public function connectTo($mode): void
+    {
         $this->Lexer->addSpecialPattern('<fksdbexport\b.*?>.*?</fksdbexport>', $mode, 'plugin_fksdbexport');
     }
 
@@ -82,7 +88,8 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
      * @param Doku_Handler $handler The handler
      * @return array Data for the renderer
      */
-    public function handle($match, $state, $pos, Doku_Handler $handler): array {
+    public function handle($match, $state, $pos, Doku_Handler $handler): array
+    {
         $match = substr($match, 13, -14);              // strip markup (including space after "<fksdbexport ")
         [$parameterString, $templateString] = preg_split('/>/u', $match, 2);
 
@@ -108,7 +115,8 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
      * @param array $data The data from the handler() function
      * @return bool If rendering was successful.
      */
-    public function render($mode, Doku_Renderer $renderer, $data): bool {
+    public function render($mode, Doku_Renderer $renderer, $data): bool
+    {
         [$params, $template, $content] = $data;
         $request = $this->createRequest($params);
         if ($mode == 'xhtml') {
@@ -154,7 +162,8 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
         return false;
     }
 
-    private function parseParameters(string $parameterString): array {
+    private function parseParameters(string $parameterString): array
+    {
         //----- default parameter settings
         $params = [
             'qid' => null,
@@ -223,7 +232,12 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
             }
         }
         // check validity
-        if (in_array($params['source'], [self::SOURCE_RESULT_CUMMULATIVE, self::SOURCE_RESULT_DETAIL, self::SOURCE_RESULT_SCHOOL_CUMMULATIVE])) {
+        if (
+            in_array(
+                $params['source'],
+                [self::SOURCE_RESULT_CUMMULATIVE, self::SOURCE_RESULT_DETAIL, self::SOURCE_RESULT_SCHOOL_CUMMULATIVE]
+            )
+        ) {
             foreach (['contest', 'year', 'series'] as $paramName) {
                 if (!isset($params['parameters'][$paramName])) {
                     msg(sprintf($this->getLang('missing_parameter'), $paramName), -1);
@@ -242,7 +256,8 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
      * @param string $templateString
      * @return array|string|null
      */
-    private function prepareContent(array $params, ?string $content, string $templateString) {
+    private function prepareContent(array $params, ?string $content, string $templateString)
+    {
         if ($content === null) {
             return null;
         }
@@ -316,7 +331,7 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
                 $templateString = io_readFile($templateFile);
             }
 
-            if (!class_exists('XSLTProcessor')) {
+            if (!class_exists(XSLTProcessor::class)) {
                 msg($this->getLang('xslt_missing'), -1);
                 return null;
             }
@@ -342,12 +357,14 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
         }
     }
 
-    private function autoRefresh(array $params, Request $request): ?string {
+    private function autoRefresh(array $params, Request $request): ?string
+    {
         $expiration = $params['expiration'] !== null ? $params['expiration'] : $this->getConf('expiration');
         return $this->downloader->download($request, $expiration);
     }
 
-    private function manualRefresh(array $params, Request $request): ?string {
+    private function manualRefresh(array $params, Request $request): ?string
+    {
         global $ID;
         $desiredVersion = $params['version'];
         $key = $this->getPluginName() . ' ' . serialize($params);
@@ -361,27 +378,43 @@ class syntax_plugin_fksdbexport extends SyntaxPlugin {
         }
     }
 
-    private function createRequest(array $params): ?Request {
+    private function createRequest(array $params): ?Request
+    {
         $parameters = $params['parameters'];
         switch ($params['source']) {
             case self::SOURCE_EXPORT:
             case self::SOURCE_EXPORT1:
             case self::SOURCE_EXPORT2:
-                $version = ($params['source'] === self::SOURCE_EXPORT) ? 1 : (int)substr($params['source'], strlen(self::SOURCE_EXPORT));
+                $version = ($params['source'] === self::SOURCE_EXPORT) ? 1 : (int)substr(
+                    $params['source'],
+                    strlen(self::SOURCE_EXPORT)
+                );
                 return new ExportRequest((string)$params['qid'], (array)$params['parameters'], (int)$version);
             case self::SOURCE_RESULT_DETAIL:
-                return new ResultsDetailRequest((string)$parameters['contest'], (int)$parameters['year'], (int)$parameters['series']);
+                return new ResultsDetailRequest(
+                    (string)$parameters['contest'],
+                    (int)$parameters['year'],
+                    (int)$parameters['series']
+                );
             case self::SOURCE_RESULT_CUMMULATIVE:
-                return new ResultsCumulativeRequest((string)$parameters['contest'], (int)$parameters['year'], explode(' ', $parameters['series']));
+                return new ResultsCumulativeRequest(
+                    (string)$parameters['contest'],
+                    (int)$parameters['year'],
+                    explode(' ', $parameters['series'])
+                );
             case self::SOURCE_RESULT_SCHOOL_CUMMULATIVE:
                 msg('fksdownloader: ' . 'School results is deprecated', -1);
                 return null;
             case self::SOURCE_ORGANIZERS:
-                return new OrganizersRequest($parameters['contest'] == 'fykos' ? 1 : 2, $parameters['year'] ?? null);
+                return new OrganizersRequest(
+                    $parameters['contest'] == 'fykos' ? 1 : 2,
+                    isset($parameters['year']) ? (int)$parameters['year'] : null
+                );
             case self::SOURCE_EVENT_LIST:
                 return new EventListRequest(explode(',', $parameters['event_type_ids']));
             case self::SOURCE_EVENT_PARTICIPANTS:
                 msg('fksdownloader: ' . 'Use eventDetail type', -1);
+                return null;
             case self::SOURCE_EVENT_DETAIL:
                 return new EventRequest((int)$parameters['event_id']);
             default:

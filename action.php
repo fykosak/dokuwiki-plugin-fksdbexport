@@ -10,7 +10,8 @@ use dokuwiki\Extension\EventHandler;
  * @license GPL 2 http://www.gnu.org/licenses/gpl-2.0.html
  * @author  Michal Koutný <michal@fykos.cz>
  */
-class action_plugin_fksdbexport extends ActionPlugin {
+class action_plugin_fksdbexport extends ActionPlugin
+{
 
     /**
      * Registers a callback function for a given event
@@ -18,7 +19,8 @@ class action_plugin_fksdbexport extends ActionPlugin {
      * @param EventHandler $controller DokuWiki's event controller object
      * @return void
      */
-    public function register(EventHandler $controller): void {
+    public function register(EventHandler $controller): void
+    {
         $controller->register_hook('PARSER_CACHE_USE', 'BEFORE', $this, 'handleParserCacheUse');
     }
 
@@ -30,7 +32,8 @@ class action_plugin_fksdbexport extends ActionPlugin {
      *                           handler was registered]
      * @return void
      */
-    public function handleParserCacheUse(Event $event, $param): void {
+    public function handleParserCacheUse(Event $event, $param): void
+    {
         $cache = &$event->data;
 
         // we're only interested in wiki pages
@@ -46,6 +49,9 @@ class action_plugin_fksdbexport extends ActionPlugin {
         if (!is_array($depends) || !count($depends)) {
             return; // nothing to do
         }
-        $cache->depends['files'] = !empty($cache->depends['files']) ? array_merge($cache->depends['files'], $depends) : $depends;
+        $cache->depends['files'] = !empty($cache->depends['files']) ? array_merge(
+            $cache->depends['files'],
+            $depends
+        ) : $depends;
     }
 }

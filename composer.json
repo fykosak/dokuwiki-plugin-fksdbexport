@@ -11,6 +11,9 @@
     ],
     "require": {
         "php": "7.4.*",
-        "fykosak/fksdb-downloader-core": "1.2.0"
+        "ext-dom": "*",
+        "ext-xsl": "*",
+        "ext-soap": "*",
+        "fykosak/fksdb-downloader-core": "dev-master#abc444e"
     }
 }
