@@ -35,7 +35,8 @@ class helper_plugin_fksdbexport extends Plugin
             $this->downloader = new FKSDBDownloader(
                 $this->getConf('wsdl'),
                 $this->getConf('fksdb_login'),
-                $this->getConf('fksdb_password')
+                $this->getConf('fksdb_password'),
+                $this->getConf('fksdb_json_api')
             );
         }
         return $this->downloader;
